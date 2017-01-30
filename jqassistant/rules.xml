@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  ~ License: Apache License, Version 2.0
+  ~ See the license.txt file in the root directory or <http://www.apache.org/licenses/LICENSE-2.0>.
+  -->
+<jqa:jqassistant-rules xmlns:jqa="http://www.buschmais.com/jqassistant/core/analysis/rules/schema/v1.0">
+
+    <constraint id="my-rules:PublicMethodsMayNotExposeInternalTypes">
+        <description>API/SPI methods must not expose internal types.</description>
+        <cypher><![CDATA[
+            // return values
+            MATCH
+                (class)-[:`DECLARES`]->(method)-[:`RETURNS`]->(returntype)
+            WHERE
+                NOT class.fqn =~ ".*\\.internal\\..*"
+                AND (method.visibility="public" OR method.visibility="protected")
+                AND returntype.fqn =~ ".*\\.internal\\..*"
+            RETURN
+                method
+
+            // parameters
+            UNION ALL
+            MATCH
+                (class)-[:`DECLARES`]->(method)-[:`HAS`]->(parameter)-[:`OF_TYPE`]->(parametertype)
+            WHERE
+                NOT class.fqn =~ ".*\\.internal\\..*"
+                AND (method.visibility="public" OR method.visibility="protected")
+                AND parametertype.fqn =~ ".*\\.internal\\..*"
+            RETURN
+                method
+        ]]></cypher>
+    </constraint>
+
+    <group id="default">
+        <includeConstraint refId="my-rules:PublicMethodsMayNotExposeInternalTypes" />
+    </group>
+
+</jqa:jqassistant-rules>
